@@ -16,13 +16,13 @@ const { ObjectId } = require("mongodb");
 // const admins = db.collection("admins");
 // const otps = db.collection("otps");
 
-const db = require("../util/database");
+const db = require("../utils/database");
 const {
   checkPhoneExist,
   checkPhoneIfNotExist,
   checkOtpErrorIfSameDate,
   checkOtpPhone,
-} = require("./../util/auth");
+} = require("../utils/auth");
 
 exports.register = asyncHandler(async (req, res, next) => {
   const phone = req.body.phone;
@@ -89,8 +89,8 @@ exports.register = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     message: `We are sending OTP to 09${phone}.`,
-    phone: phone,
-    token: token,
+    phone,
+    token,
   });
 });
 
@@ -119,9 +119,7 @@ exports.verifyOTP = [
       err.status = 400;
       return next(err);
     }
-    const token = req.body.token;
-    const phone = req.body.phone;
-    const otp = req.body.otp;
+    const { token, phone, otp } = req.body;
 
     let admins = await db.collection("admins");
     let phoneQuery = { phone: phone };
@@ -223,9 +221,7 @@ exports.confirmPassword = [
       err.status = 400;
       return next(err);
     }
-    const token = req.body.token;
-    const phone = req.body.phone;
-    const password = req.body.password;
+    const { token, phone, password } = req.body;
 
     let admins = await db.collection("admins");
     let phoneQuery = { phone: phone };
@@ -313,8 +309,7 @@ exports.login = [
       return next(err);
     }
 
-    const phone = req.body.phone;
-    const password = req.body.password;
+    const { phone, password } = req.body;
 
     let admins = await db.collection("admins");
     let findAdminQuery = { phone: phone };
