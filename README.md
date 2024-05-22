@@ -21,6 +21,7 @@ For Mongodb Atlas
 
 ```
 MONGO_URL="mongodb+srv://<username>:<password>@cluster0.ropxgna.mongodb.net/lucky?retryWrites=true&w=majority"
+TOKEN_SECRET="should something hard to read"
 
 ```
 
@@ -28,6 +29,7 @@ For Local Mongodb server
 
 ```
 MONGO_URI="mongodb://127.0.0.1/lucky"
+TOKEN_SECRET="should something hard to read"
 
 ```
 
@@ -39,6 +41,7 @@ DM
 
 #### Find more other Starter kits of mine ?   
 
+  [Express + Prisma ORM + mongodb - rest api](https://github.com/Bonekyaw/node-express-prisma-mongodb)  
   [Express + Prisma ORM + SQL - rest api](https://github.com/Bonekyaw/node-express-prisma-rest)  
   [Express + Apollo server + mongoose - graphql api](https://github.com/Bonekyaw/node-express-apollo-nosql)  
   [Express + graphql js + mongoose - graphql api](https://github.com/Bonekyaw/node-express-nosql-graphql)  
