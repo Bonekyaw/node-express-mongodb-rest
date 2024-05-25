@@ -34,7 +34,7 @@ TOKEN_SECRET="should something hard to read"
 
 ```
 Please note.   
-*TOKEN_SECRET* should be complex and hard to guest.  
+*TOKEN_SECRET* should be complex and hard to guess.  
 After git clone, it should be run.
 
 ```
