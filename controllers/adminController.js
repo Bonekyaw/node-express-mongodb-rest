@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const { unlink } = require("node:fs/promises");
+const path = require("path");
 
 const { ObjectId } = require("mongodb");
 const db = require("../utils/database");
@@ -21,7 +22,16 @@ exports.uploadProfile = asyncHandler(async (req, res, next) => {
   const imageUrl = image.path.replace("\\", "/");
 
   if (admin.profile) {
-    await unlink(admin.profile); // Delete an old profile image because it accepts just one.
+    // await unlink(admin.profile); // Delete an old profile image because it accepts just one.
+    try {
+      await unlink(path.join(__dirname, "..", admin.profile));
+    } catch (error) {
+      const adminUpdates = {
+        $set: admin,
+      };
+      admin.profile = imageUrl;
+      await admins.updateOne(adminQuery, adminUpdates);
+    }
   }
 
   const adminUpdates = {
