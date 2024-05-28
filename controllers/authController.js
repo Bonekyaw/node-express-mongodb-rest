@@ -22,6 +22,7 @@ const {
   checkPhoneIfNotExist,
   checkOtpErrorIfSameDate,
   checkOtpPhone,
+  checkAdmin,
 } = require("../utils/auth");
 
 exports.register = asyncHandler(async (req, res, next) => {
@@ -55,7 +56,7 @@ exports.register = asyncHandler(async (req, res, next) => {
     otpUpdates = {
       $set: otpCheck,
     };
-  
+
     const lastRequest = new Date(otpCheck.updatedAt).toLocaleDateString();
     const isSameDate = lastRequest == new Date().toLocaleDateString();
 
@@ -166,10 +167,11 @@ exports.verifyOTP = [
       if (!isSameDate) {
         otpCheck.error = 1;
       } else {
-        if (otpCheck.error) {      // because NaN issue
-          otpCheck.error += 1;   
+        if (otpCheck.error) {
+          // because NaN issue
+          otpCheck.error += 1;
         } else {
-          otpCheck.error = 1;    
+          otpCheck.error = 1;
         }
       }
       await otps.updateOne(otpQuery, otpUpdates);
@@ -249,9 +251,9 @@ exports.confirmPassword = [
 
     if (otpCheck.verifyToken !== token) {
       otpCheck.error = 5;
-  
+
       await otps.updateOne(otpQuery2, otpUpdates2);
-  
+
       const err = new Error("Token is invalid.");
       err.status = 400;
       return next(err);
@@ -280,7 +282,9 @@ exports.confirmPassword = [
 
     // jwt token
     let payload = { id: newAdmin.insertedId };
-    const jwtToken = jwt.sign(payload, process.env.TOKEN_SECRET, {expiresIn: '1h'});
+    const jwtToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+      expiresIn: "1h",
+    });
 
     res.status(201).json({
       message: "Successfully created an account.",
@@ -343,16 +347,16 @@ exports.login = [
         if (admin.error >= 2) {
           admin.status = "freeze";
         } else {
-          if (admin.error) {    // because it may be NaN 
+          if (admin.error) {
+            // because it may be NaN
             admin.error += 1;
           } else {
             admin.error = 1;
           }
         }
       }
-  
-      await admins.updateOne(adminQuery, adminUpdates);
 
+      await admins.updateOne(adminQuery, adminUpdates);
 
       // ----- Ending -----------
       const err = new Error("Password is wrong.");
@@ -362,17 +366,86 @@ exports.login = [
 
     if (admin.error >= 1) {
       admin.error = 0;
-  
+
       await admins.updateOne(adminQuery, adminUpdates);
     }
 
     let payload = { id: admin._id.toString() };
-    const jwtToken = jwt.sign(payload, process.env.TOKEN_SECRET, {expiresIn: '1h'});
+    const jwtToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+      expiresIn: "1h",
+    });
 
     res.status(201).json({
       message: "Successfully Logged In.",
       token: jwtToken,
       user_id: admin._id.toString(),
+    });
+  }),
+];
+
+exports.refreshToken = [
+  // Validate and sanitize fields.
+  body("randomToken", "randomToken must not be empty.")
+    .trim()
+    .notEmpty()
+    .escape(),
+  body("user_id", "User ID must not be empty.").trim().notEmpty().escape(),
+
+  asyncHandler(async (req, res, next) => {
+    // Extract the validation errors from a request.
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      // There are errors. Render form again with sanitized values/error messages.
+      const err = new Error("Validation failed!");
+      err.status = 400;
+      return next(err);
+    }
+
+    const authHeader = req.get("Authorization");
+    if (!authHeader) {
+      const err = new Error("You are not an authenticated user!.");
+      err.status = 401;
+      throw err;
+    }
+    const { randomToken, user_id } = req.body;
+
+    let admins = await db.collection("admins");
+    const adminQuery = { _id: new ObjectId(user_id) };
+    const admin = await admins.findOne(adminQuery);
+  
+    if (admin.randToken !== randomToken) {
+      const adminUpdates = {
+        $set: admin,
+      };
+      admin.error = 5;
+      await admins.updateOne(adminQuery, adminUpdates);
+
+      const err = new Error(
+        "This request may be an attack. Please contact the admin team."
+      );
+      err.status = 400;
+      return next(err);
+    }
+
+    const randToken = rand() + rand() + rand();
+
+    const adminUpdates = {
+      $set: admin,
+    };
+    admin.randToken = randToken;
+    await admins.updateOne(adminQuery, adminUpdates);
+
+    // jwt token
+    let payload = { id: user_id };
+    const jwtToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.status(201).json({
+      message: "Successfully sent a new token.",
+      token: jwtToken,
+      user_id: user_id,
+      randomToken: randToken,
     });
   }),
 ];
