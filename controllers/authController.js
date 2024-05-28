@@ -271,10 +271,12 @@ exports.confirmPassword = [
 
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
+    const randToken = rand() + rand() + rand();
 
     const adminDoc = {
       phone: req.body.phone,
       password: hashPassword,
+      randToken: randToken,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -290,6 +292,7 @@ exports.confirmPassword = [
       message: "Successfully created an account.",
       token: jwtToken,
       user_id: newAdmin.insertedId,
+      randomToken: randToken,
     });
   }),
 ];
@@ -364,9 +367,13 @@ exports.login = [
       return next(err);
     }
 
+    const randToken = rand() + rand() + rand();
     if (admin.error >= 1) {
       admin.error = 0;
-
+      admin.randToken = randToken;
+      await admins.updateOne(adminQuery, adminUpdates);
+    } else {
+      admin.randToken = randToken;
       await admins.updateOne(adminQuery, adminUpdates);
     }
 
@@ -379,6 +386,7 @@ exports.login = [
       message: "Successfully Logged In.",
       token: jwtToken,
       user_id: admin._id.toString(),
+      randomToken: randToken,
     });
   }),
 ];
@@ -417,7 +425,7 @@ exports.refreshToken = [
       const adminUpdates = {
         $set: admin,
       };
-      admin.error = 5;
+      admin.error = 3;
       await admins.updateOne(adminQuery, adminUpdates);
 
       const err = new Error(
