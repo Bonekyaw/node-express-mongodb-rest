@@ -13,10 +13,11 @@ const { ObjectId } = require("mongodb");
 // const mongo = new MongoClient(process.env.MONGO_URI);       // localhost
 
 // const db = mongo.db("lucky");
-// const admins = db.collection("admins");
-// const otps = db.collection("otps");
 
 const db = require("../utils/database");
+const admins = db.collection("admins");
+const otps = db.collection("otps");
+
 const {
   checkPhoneExist,
   checkPhoneIfNotExist,
@@ -28,14 +29,12 @@ const {
 exports.register = asyncHandler(async (req, res, next) => {
   const phone = req.body.phone;
 
-  let admins = await db.collection("admins");
   let phoneQuery = { phone: phone };
 
   let admin = await admins.findOne(phoneQuery);
   checkPhoneExist(admin);
 
   // OTP processing eg. Sending OTP request to Operator
-  let otps = await db.collection("otps");
   let otpCheck = await otps.findOne(phoneQuery);
   let otpQuery;
   let otpUpdates;
@@ -52,7 +51,7 @@ exports.register = asyncHandler(async (req, res, next) => {
     };
     await otps.insertOne(otpDoc);
   } else {
-    otpQuery = { _id: new ObjectId(otpCheck._id) };
+    otpQuery = { _id: ObjectId.createFromHexString(otpCheck._id) };
     otpUpdates = {
       $set: otpCheck,
     };
@@ -122,17 +121,15 @@ exports.verifyOTP = [
     }
     const { token, phone, otp } = req.body;
 
-    let admins = await db.collection("admins");
     let phoneQuery = { phone: phone };
     let admin = await admins.findOne(phoneQuery);
     checkPhoneExist(admin);
 
-    let otps = await db.collection("otps");
     let otpCheck = await otps.findOne(phoneQuery);
 
     checkOtpPhone(otpCheck);
 
-    const otpQuery = { _id: new ObjectId(otpCheck._id) };
+    const otpQuery = { _id: ObjectId.createFromHexString(otpCheck._id) };
     const otpUpdates = {
       $set: otpCheck,
     };
@@ -225,13 +222,11 @@ exports.confirmPassword = [
     }
     const { token, phone, password } = req.body;
 
-    let admins = await db.collection("admins");
     let phoneQuery = { phone: phone };
     let admin = await admins.findOne(phoneQuery);
 
     checkPhoneExist(admin);
 
-    let otps = await db.collection("otps");
     let otpCheck = await otps.findOne(phoneQuery);
 
     checkOtpPhone(otpCheck);
@@ -244,7 +239,7 @@ exports.confirmPassword = [
       return next(err);
     }
 
-    const otpQuery2 = { _id: new ObjectId(otpCheck._id) };
+    const otpQuery2 = { _id: ObjectId.createFromHexString(otpCheck._id) };
     const otpUpdates2 = {
       $set: otpCheck,
     };
@@ -318,7 +313,6 @@ exports.login = [
 
     const { phone, password } = req.body;
 
-    let admins = await db.collection("admins");
     let findAdminQuery = { phone: phone };
     let admin = await admins.findOne(findAdminQuery);
 
@@ -333,7 +327,7 @@ exports.login = [
       return next(err);
     }
 
-    const adminQuery = { _id: new ObjectId(admin._id) };
+    const adminQuery = { _id: admin._id };
     const adminUpdates = {
       $set: admin,
     };
@@ -417,8 +411,7 @@ exports.refreshToken = [
     }
     const { randomToken, user_id } = req.body;
 
-    let admins = await db.collection("admins");
-    const adminQuery = { _id: new ObjectId(user_id) };
+    const adminQuery = { _id: ObjectId(user_id) };
     const admin = await admins.findOne(adminQuery);
   
     if (admin.randToken !== randomToken) {

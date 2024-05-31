@@ -5,12 +5,14 @@ const adminController = require('../../controllers/adminController');
 const upload = require('../../middlewares/uploadFile');
 
 // Upload single image
-router.put('/admins/:id/upload', upload.single('avatar'), adminController.uploadProfile );
+router.put('/admins/upload', upload.single('avatar'), adminController.uploadProfile );
 // Upload multiple images
 // router.put('/admins/:id/upload',upload.array('avatar'), adminController.uploadProfile );
 
-// GET localhost:8080/api/v1/admins - get all admins
+// GET localhost:8080/api/v1/admins?page=1&limit=5 
+// Get all admins by Pagination
 router.get('/admins', adminController.index);
+// router.get('/admins', authorise(false, "user"), adminController.index);
 
 // POST localhost:8080/api/v1/admins - create an admin
 router.post('/admins', adminController.store);
