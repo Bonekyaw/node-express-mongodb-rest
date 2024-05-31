@@ -80,8 +80,8 @@ exports.index = [
       profile: 1,
       createdAt: 1,
     };
-    const sort = { createdAt: -1 };
-    // const sort = { _id: 1 };
+    // const sort = { createdAt: -1 };
+    const sort = { _id: -1 };
 
     const result = await paginate.offset(
       admins,

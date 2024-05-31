@@ -101,7 +101,7 @@ exports.cursor = async (
   limit = 10,
   filters = {},
   fields = {},
-  sort = { _id: 1 }
+  sort = { _id: -1 }
 ) => {
   const cursorR = cursor ? ObjectId.createFromHexString(cursor) : null;
 
