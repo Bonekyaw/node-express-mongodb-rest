@@ -47,7 +47,7 @@ exports.uploadProfile = asyncHandler(async (req, res, next) => {
 
 exports.index = [
   // Validate and sanitize fields.
-  // query("page", "Page number must be integer.").isInt({ gt: 0 }).toInt(),
+  query("page", "Page number must be integer.").isInt({ gt: 0 }).toInt(),
   query("limit", "Limit number must be integer.")
     .isInt({ min: 1, max: 15 })
     .toInt(),
@@ -65,9 +65,9 @@ exports.index = [
     // const admin = req.admin;
     // authorise(false, admin, "user");
 
-    // const { page, limit } = req.query;
-    const limit = req.query.limit;
-    const cursors = req.query.cursor ?? null;
+    const { page, limit } = req.query;
+    // const limit = req.query.limit;
+    // const cursors = req.query.cursor ?? null;
 
     const filters = { status: "active" };
     const fields = {

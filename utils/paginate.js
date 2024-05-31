@@ -112,7 +112,7 @@ exports.cursor = async (
   }
 
   if (filters) {
-    filter = {...filter, ...filters}; // Case-insensitive regex filter
+    filter = {...filter, ...filters}; 
   }
 
   try {
