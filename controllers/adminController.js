@@ -7,7 +7,7 @@ const { ObjectId } = require("mongodb");
 const db = require("../utils/database");
 const admins = db.collection("admins");
 const authorise = require("./../utils/authorise");
-const paginate = require("./../utils/paginate");
+const { offset, noCount, cursor } = require("./../utils/paginate");
 
 const { checkUploadFile } = require("./../utils/file");
 
@@ -80,10 +80,9 @@ exports.index = [
       profile: 1,
       createdAt: 1,
     };
-    // const sort = { createdAt: -1 };
-    const sort = { _id: -1 };
+    const sort = { createdAt: -1 };
 
-    const result = await paginate.offset(
+    const result = await noCount(
       admins,
       page,
       limit,
@@ -91,7 +90,7 @@ exports.index = [
       fields,
       sort
     );
-    // const result = await paginate.cursor(admins, cursors, limit, filters, fields, sort);
+    // const result = await cursor(admins, cursors, limit, filters, fields, sort);
     res.status(200).json(result);
   }),
 ];

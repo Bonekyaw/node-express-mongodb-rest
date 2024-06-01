@@ -9,39 +9,40 @@ exports.offset = async (
   model,
   page = 1,
   limit = 10,
-  filters = {},
-  fields = {},
-  sort = {},
-  lookup_1
+  filters = null,
+  fields = null,
+  sort = null,
+  lookup_1 = null
 ) => {
   const skip = (page - 1) * limit;
+
+  let options = [{ $skip: skip }, { $limit: limit }];
+  if (lookup_1) {
+    options = [...options, { $lookup: lookup_1 }];
+  }
+  if (fields) {
+    options = [...options, { $project: fields }];
+  }
+
+  let totalCount = [{ $count: "count" }];
+  if (filters) {
+    totalCount = [{ $match: filters }, ...totalCount];
+  }
+
+  let aggregatePipeline = [];
+  if (filters) {
+    aggregatePipeline = [{ $match: filters }];
+  }
+  if (sort) {
+    aggregatePipeline = [...aggregatePipeline, { $sort: sort }];
+  }
+
+  aggregatePipeline = [
+    ...aggregatePipeline,
+    { $facet: { data: options, totalCount: totalCount } },
+  ];
+
   try {
-    const aggregatePipeline = lookup_1
-      ? [
-          { $match: filters },
-          { $sort: sort },
-          {
-            $facet: {
-              data: [
-                { $skip: skip },
-                { $limit: limit },
-                { $lookup: lookup_1 },
-                { $project: fields },
-              ],
-              totalCount: [{ $match: filters }, { $count: "count" }],
-            },
-          },
-        ]
-      : [
-          { $match: filters },
-          { $sort: sort },
-          {
-            $facet: {
-              data: [{ $skip: skip }, { $limit: limit }, { $project: fields }],
-              totalCount: [{ $match: filters }, { $count: "count" }],
-            },
-          },
-        ];
     const results = await model.aggregate(aggregatePipeline).toArray();
     const rows = results[0]?.data || [];
     const totalDocuments = results[0]?.totalCount[0]?.count || 0;
@@ -65,31 +66,33 @@ exports.noCount = async (
   model,
   page = 1,
   limit = 10,
-  filters = {},
-  fields = {},
-  sort = {},
-  lookup_1
+  filters = null,
+  fields = null,
+  sort = null,
+  lookup_1 = null
 ) => {
   const skip = (page - 1) * limit;
 
-  try {
-    const aggregatePipeline = lookup_1
-      ? [
-          { $match: filters },
-          { $sort: sort },
-          { $skip: skip },
-          { $limit: limit },
-          { $lookup: lookup_1 },
-          { $project: fields },
-        ]
-      : [
-          { $match: filters },
-          { $sort: sort },
-          { $skip: skip },
-          { $limit: limit },
-          { $project: fields },
-        ];
+  let aggregatePipeline = [];
+  if (filters) {
+    aggregatePipeline = [{ $match: filters }];
+  }
+  if (sort) {
+    aggregatePipeline = [...aggregatePipeline, { $sort: sort }];
+  }
+  aggregatePipeline = [
+    ...aggregatePipeline,
+    { $skip: skip },
+    { $limit: limit + 1},
+  ];
+  if (lookup_1) {
+    aggregatePipeline = [...aggregatePipeline, { $lookup: lookup_1 }];
+  }
+  if (fields) {
+    aggregatePipeline = [...aggregatePipeline, { $project: fields }];
+  }
 
+  try {
     const collections = await model.aggregate(aggregatePipeline).toArray();
     let hasNextPage = false;
     if (collections.length > limit) {
@@ -120,38 +123,42 @@ exports.cursor = async (
   model,
   cursor,
   limit = 10,
-  filters = {},
-  fields = {},
+  filters = null,
+  fields = null,
   sort = { _id: -1 },
-  lookup_1
+  lookup_1 = null
 ) => {
   const cursorR = cursor ? ObjectId.createFromHexString(cursor) : null;
 
-  let filter = {};
+  let query = {};
   // Add cursor-based filter
   if (cursorR) {
-    filter._id = { $gt: cursorR };
+    query._id = { $lt: cursorR };
   }
 
   if (filters) {
-    filter = { ...filter, ...filters };
+    query = { ...query, ...filters };
+  }
+
+  let aggregatePipeline = [];
+  if (cursor || filters) {
+    aggregatePipeline = [{ $match: query }];
+  }
+  if (sort) {
+    aggregatePipeline = [...aggregatePipeline, { $sort: sort }];
+  }
+  aggregatePipeline = [
+    ...aggregatePipeline,
+    { $limit: limit + 1},
+  ];
+  if (lookup_1) {
+    aggregatePipeline = [...aggregatePipeline, { $lookup: lookup_1 }];
+  }
+  if (fields) {
+    aggregatePipeline = [...aggregatePipeline, { $project: fields }];
   }
 
   try {
-    const aggregatePipeline = lookup_1
-      ? [
-          { $match: filter }, // Apply filters
-          { $sort: sort }, // Sort by _id in ascending order
-          { $limit: limit + 1 },
-          { $project: fields }, // Project fields
-        ]
-      : [
-          { $match: filter }, // Apply filters
-          { $sort: sort }, // Sort by _id in ascending order
-          { $limit: limit + 1 },
-          { $project: fields }, // Project fields
-        ];
-
     const results = await model.aggregate(aggregatePipeline).toArray();
 
     const hasNextPage = results.length > limit;
