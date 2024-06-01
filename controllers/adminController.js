@@ -82,7 +82,7 @@ exports.index = [
     };
     const sort = { createdAt: -1 };
 
-    const result = await noCount(
+    const result = await offset(
       admins,
       page,
       limit,
