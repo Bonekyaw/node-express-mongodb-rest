@@ -2,17 +2,13 @@ require("dotenv").config();
 
 const jwt = require("jsonwebtoken");
 
-const checkAuth = (param) => {
-  if (!param) {
+const isAuth = (req, res, next) => {
+  const authHeader = req.get("Authorization");
+  if (!authHeader) {
     const err = new Error("You are not an authenticated user!.");
     err.status = 401;
     return next(err);
   }
-};
-
-const isAuth = (req, res, next) => {
-  const authHeader = req.get("Authorization");
-  checkAuth(authHeader);
 
   const token = authHeader.split(" ")[1];
   let decodedToken;
@@ -23,7 +19,11 @@ const isAuth = (req, res, next) => {
     return next(error);
   }
 
-  checkAuth(decodedToken);
+  if (!decodedToken) {
+    const err = new Error("You are not an authenticated user!.");
+    err.status = 401;
+    return next(err);
+  }
   req.adminId = decodedToken.id;
   next();
 };
