@@ -1,4 +1,4 @@
-# This is Simple Express Starter Kit
+# This is Simple Nodejs Express Starter Kit
 
 #### Node express + Mongodb Only without Mongoose ODM + REST api 
 
